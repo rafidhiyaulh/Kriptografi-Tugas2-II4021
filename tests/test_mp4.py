@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 from video_engine import SteganoEngine, VideoHandler, QualityMetrics
 
 def test_mp4_lossy():
@@ -12,12 +12,10 @@ def test_mp4_lossy():
     plain_bytes = plain_text.encode('utf-8')
     print(f"Pesan: '{plain_text}'")
     
-    # Bikin file sementara
     test_file = "test_pesan.txt"
     with open(test_file, 'wb') as f:
         f.write(plain_bytes)
         
-    # Dummy frame lagi
     np.random.seed(99)
     dummy_frames = []
     width, height, fps = 100, 100, 30.0
@@ -30,7 +28,6 @@ def test_mp4_lossy():
     
     cover_frames, _, _, _ = VideoHandler.read_frames(dummy_video_path)
     
-    # Embed stego pake payload langsung tanpa kripto
     stego_frames = SteganoEngine.embed_data(
         frames=cover_frames,
         file_path=test_file,
@@ -45,7 +42,6 @@ def test_mp4_lossy():
     
     s_frames, _, _, _ = VideoHandler.read_frames(stego_video_path)
     
-    # Cek compress levelnya
     mse = QualityMetrics.calculate_mse(cover_frames[0], s_frames[0])
     psnr = QualityMetrics.calculate_psnr(cover_frames[0], s_frames[0])
     print(f"MSE H.264: {mse:.4f}")
@@ -69,7 +65,6 @@ def test_mp4_lossy():
     except Exception as e:
         print(f"❌ GAGAL! File corrupt: {str(e)}")
 
-    # Clean file sementara
     if os.path.exists(test_file): os.remove(test_file)
     if os.path.exists(dummy_video_path): os.remove(dummy_video_path)
     if os.path.exists(stego_video_path): os.remove(stego_video_path)

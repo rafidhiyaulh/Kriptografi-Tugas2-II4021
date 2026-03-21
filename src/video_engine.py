@@ -29,7 +29,6 @@ class QualityMetrics:
 
     @staticmethod
     def generate_histogram(cover_frame: np.ndarray, stego_frame: np.ndarray, save_path: str = None):
-        # Tools simpel buat bikin visualisasi plot
         colors = ('b', 'g', 'r')
         plt.figure(figsize=(10, 4))
         
@@ -77,7 +76,6 @@ class VideoHandler:
 
     @staticmethod
     def write_avi_lossless(save_path: str, frames: list, fps: float, width: int, height: int):
-        # Pakai FFV1 biar 100% lossles (tanpa kompres pixel)
         fourcc = cv2.VideoWriter_fourcc(*'FFV1')
         out = cv2.VideoWriter(save_path, fourcc, fps, (width, height), isColor=True)
         for frame in frames:
@@ -86,7 +84,6 @@ class VideoHandler:
         
     @staticmethod
     def write_mp4_high_quality(save_path: str, frames: list, fps: float, width: int, height: int):
-        # Gunakan imageio dan libx264rgb dengan crf=0 agar pixel LSB mp4 mp4v tetep utuh
         writer = imageio.get_writer(
             save_path, 
             format='FFMPEG', 
@@ -108,11 +105,10 @@ class SteganoEngine:
         if not frames:
             return 0
         h, w, _ = frames[0].shape
-        # Total bytes yang bisa nampung per piksel = 1 (Karena 3+3+2 bit RGB = 8 bit)
         return h * w * len(frames)
 
     @staticmethod
-    def construct_metadata(file_path: str, payload_size: int, is_encrypted: bool, is_random: bool) -> bytes:
+    def construct_metadata(file_path: str, payload_size: int, is_encrypted: bool, is_random: bool, lsb_mode: str = "332") -> bytes:
         filename = os.path.basename(file_path)
         name, ext = os.path.splitext(filename)
         
@@ -122,7 +118,8 @@ class SteganoEngine:
             "ext": ext,
             "size": payload_size,
             "encrypted": is_encrypted,
-            "random": is_random
+            "random": is_random,
+            "lsb_mode": lsb_mode
         }
         
         meta_bytes = json.dumps(metadata_dict).encode('utf-8')
@@ -132,7 +129,6 @@ class SteganoEngine:
 
     @staticmethod
     def _pixel_coordinates(index: int, width: int, height: int):
-        # Hitung koordinat flat array index ke dimensi xyz
         frame_idx = index // (width * height)
         rem = index % (width * height)
         y = rem // width
@@ -140,24 +136,22 @@ class SteganoEngine:
         return frame_idx, y, x
 
     @staticmethod
-    def embed_data(frames: list, file_path: str, payload: bytes, is_encrypted: bool, is_random: bool, stego_key: str = None) -> list:
+    def embed_data(frames: list, file_path: str, payload: bytes, is_encrypted: bool, is_random: bool, stego_key: str = None, lsb_mode: str = "332") -> list:
         capacity = SteganoEngine.calculate_capacity(frames)
-        meta_bytes = SteganoEngine.construct_metadata(file_path, len(payload), is_encrypted, is_random)
+        meta_bytes = SteganoEngine.construct_metadata(file_path, len(payload), is_encrypted, is_random, lsb_mode)
         
         if len(meta_bytes) + len(payload) > capacity:
-            raise ValueError("Kapasitas video ngga cukup coy!")
+            raise ValueError()
             
         h, w, _ = frames[0].shape
         total_pixels = h * w * len(frames)
         
-        # 1. Metadata ditaruh selalu urut di piksel/frame-frame terawal (biar bisa dibaca)
         for i in range(len(meta_bytes)):
             fi, y, x = SteganoEngine._pixel_coordinates(i, w, h)
             b, g, r = frames[fi][y, x]
-            new_r, new_g, new_b = BitManipulator.embed_lsb_332(r, g, b, meta_bytes[i])
+            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, meta_bytes[i], mode="332")
             frames[fi][y, x] = [new_b, new_g, new_r]
             
-        # 2. Sisipin sisanya, tinggal pilih mode acak / berurut
         meta_len = len(meta_bytes)
         
         if is_random:
@@ -169,7 +163,7 @@ class SteganoEngine:
         for i, idx in enumerate(indices):
             fi, y, x = SteganoEngine._pixel_coordinates(idx, w, h)
             b, g, r = frames[fi][y, x]
-            new_r, new_g, new_b = BitManipulator.embed_lsb_332(r, g, b, payload[i])
+            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, payload[i], mode=lsb_mode)
             frames[fi][y, x] = [new_b, new_g, new_r]
             
         return frames
@@ -179,29 +173,30 @@ class SteganoEngine:
         h, w, _ = frames[0].shape
         total_pixels = h * w * len(frames)
         
-        def get_pixel_byte(index):
+        def get_pixel_byte(index, mode="332"):
             fi, y, x = SteganoEngine._pixel_coordinates(index, w, h)
             b, g, r = frames[fi][y, x]
-            return BitManipulator.extract_lsb_332(r, g, b)
+            return BitManipulator.extract_lsb(r, g, b, mode)
             
-        # Pancing & tangkap ukuran info metadata dulu (4 byte terawal)
         len_bytes = bytearray()
         for i in range(4):
-            len_bytes.append(get_pixel_byte(i))
+            len_bytes.append(get_pixel_byte(i, "332"))
         meta_len = struct.unpack(">I", bytes(len_bytes))[0]
         
-        # Tarik semua data json meta nya setelah 4 byte td
         meta_json_bytes = bytearray()
         for i in range(4, 4 + meta_len):
-            meta_json_bytes.append(get_pixel_byte(i))
+            meta_json_bytes.append(get_pixel_byte(i, "332"))
             
-        metadata = json.loads(meta_json_bytes.decode('utf-8'))
+        try:
+            metadata = json.loads(meta_json_bytes.decode('utf-8'))
+        except:
+            raise ValueError()
         if metadata.get("magic") != "STG26":
-            raise ValueError("Video ini bukan file stego kita")
+            raise ValueError()
             
-        # Sesuaiin posisi koordinat extract buat payloadnya
         payload_size = metadata.get("size")
         is_random = metadata.get("random")
+        lsb_mode = metadata.get("lsb_mode", "332")
         total_meta_used = 4 + meta_len
         
         if is_random:
@@ -212,6 +207,6 @@ class SteganoEngine:
             
         secret_payload = bytearray()
         for idx in indices:
-            secret_payload.append(get_pixel_byte(idx))
+            secret_payload.append(get_pixel_byte(idx, lsb_mode))
             
         return metadata, bytes(secret_payload)
