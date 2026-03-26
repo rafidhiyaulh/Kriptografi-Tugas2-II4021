@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from video_engine import SteganoEngine, VideoHandler, QualityMetrics
+from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 
 def test_mp4_lossy():
     print("=== [TESTING BONUS MP4 (H.264)] ===")

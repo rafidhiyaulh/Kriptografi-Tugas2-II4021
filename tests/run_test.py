@@ -4,8 +4,8 @@ import numpy as np
 import hashlib
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from crypto_logic import A51Cipher
-from video_engine import SteganoEngine, VideoHandler, QualityMetrics
+from src.crypto_logic import A51Cipher
+from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 
 def test_integration():
     print("=== [TESTING INTEGRASI CORE: RANDOMIZED & ENCRYPTED] ===")

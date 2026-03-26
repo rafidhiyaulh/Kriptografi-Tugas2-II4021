@@ -21,41 +21,27 @@ class BitManipulator:
         return bytes(byte_array)
 
     @staticmethod
-    def embed_lsb(r: int, g: int, b: int, message_byte: int, mode="332") -> tuple:
-        if mode == "332":
-            r_bits = (message_byte >> 5) & 0b111
-            g_bits = (message_byte >> 2) & 0b111
-            b_bits = message_byte & 0b011
-            new_r = (r & 0xF8) | r_bits
-            new_g = (g & 0xF8) | g_bits
-            new_b = (b & 0xFC) | b_bits
-        elif mode == "233":
-            r_bits = (message_byte >> 6) & 0b011
-            g_bits = (message_byte >> 3) & 0b111
-            b_bits = message_byte & 0b111
-            new_r = (r & 0xFC) | r_bits
-            new_g = (g & 0xF8) | g_bits
-            new_b = (b & 0xF8) | b_bits
-        elif mode == "422":
-            r_bits = (message_byte >> 4) & 0b1111
-            g_bits = (message_byte >> 2) & 0b011
-            b_bits = message_byte & 0b011
-            new_r = (r & 0xF0) | r_bits
-            new_g = (g & 0xFC) | g_bits
-            new_b = (b & 0xFC) | b_bits
-        else:
-            raise ValueError()
+    def embed_lsb(r, g, b, message_byte, r_bits, g_bits, b_bits):
+        if r_bits + g_bits + b_bits != 8:
+            raise ValueError("Total bit R+G+B harus berjumlah 8 bit per piksel")
+
+        r_val = (message_byte >> (g_bits + b_bits)) & ((1 << r_bits) - 1)
+        g_val = (message_byte >> b_bits) & ((1 << g_bits) - 1)
+        b_val = message_byte & ((1 << b_bits) - 1)
+
+        new_r = (int(r) & (~((1 << r_bits) - 1) & 0xFF)) | r_val
+        new_g = (int(g) & (~((1 << g_bits) - 1) & 0xFF)) | g_val
+        new_b = (int(b) & (~((1 << b_bits) - 1) & 0xFF)) | b_val
+        
         return new_r, new_g, new_b
 
     @staticmethod
-    def extract_lsb(r: int, g: int, b: int, mode="332") -> int:
-        if mode == "332":
-            return ((r & 0b111) << 5) | ((g & 0b111) << 2) | (b & 0b011)
-        elif mode == "233":
-            return ((r & 0b011) << 6) | ((g & 0b111) << 3) | (b & 0b111)
-        elif mode == "422":
-            return ((r & 0b1111) << 4) | ((g & 0b011) << 2) | (b & 0b011)
-        return 0
+    def extract_lsb(r: int, g: int, b: int, r_bits: int, g_bits: int, b_bits: int) -> int:
+        r_val = r & ((1 << r_bits) - 1)
+        g_val = g & ((1 << g_bits) - 1)
+        b_val = b & ((1 << b_bits) - 1)
+
+        return (r_val << (g_bits + b_bits)) | (g_val << b_bits) | b_val
 
 
 class A51Cipher:

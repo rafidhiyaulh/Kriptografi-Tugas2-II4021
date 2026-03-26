@@ -5,8 +5,8 @@ import hashlib
 import glob
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from crypto_logic import A51Cipher
-from video_engine import SteganoEngine, VideoHandler, QualityMetrics
+from src.crypto_logic import A51Cipher
+from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 
 def test_kombinasi_dan_kapasitas():
     print("=== [PENGUJIAN KOMBINASI & KAPASITAS (BUKTI LAPORAN)] ===\n")

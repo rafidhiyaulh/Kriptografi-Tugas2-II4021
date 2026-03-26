@@ -7,7 +7,7 @@ import json
 import os
 import random
 import imageio
-from crypto_logic import BitManipulator, A51Cipher
+from .crypto_logic import BitManipulator, A51Cipher
 
 class QualityMetrics:
     @staticmethod
@@ -136,12 +136,13 @@ class SteganoEngine:
         return frame_idx, y, x
 
     @staticmethod
-    def embed_data(frames: list, file_path: str, payload: bytes, is_encrypted: bool, is_random: bool, stego_key: str = None, lsb_mode: str = "332") -> list:
+    def embed_data(frames: list, file_path: str, payload: bytes, is_encrypted: bool, is_random: bool, stego_key: str = None, r_bits: int = 3, g_bits: int = 3, b_bits: int = 2) -> list:
         capacity = SteganoEngine.calculate_capacity(frames)
-        meta_bytes = SteganoEngine.construct_metadata(file_path, len(payload), is_encrypted, is_random, lsb_mode)
+        lsb_mode_str = f"{r_bits}{g_bits}{b_bits}"
+        meta_bytes = SteganoEngine.construct_metadata(file_path, len(payload), is_encrypted, is_random, lsb_mode_str)
         
         if len(meta_bytes) + len(payload) > capacity:
-            raise ValueError()
+            raise ValueError("Ukuran pesan melebihi kapasitas simpan video.")
             
         h, w, _ = frames[0].shape
         total_pixels = h * w * len(frames)
@@ -149,21 +150,21 @@ class SteganoEngine:
         for i in range(len(meta_bytes)):
             fi, y, x = SteganoEngine._pixel_coordinates(i, w, h)
             b, g, r = frames[fi][y, x]
-            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, meta_bytes[i], mode="332")
+            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, meta_bytes[i], 3, 3, 2)
             frames[fi][y, x] = [new_b, new_g, new_r]
             
-        meta_len = len(meta_bytes)
+        meta_len_in_pixels = len(meta_bytes)
         
         if is_random:
             random.seed(stego_key)
-            indices = random.sample(range(meta_len, total_pixels), len(payload))
+            indices = random.sample(range(meta_len_in_pixels, total_pixels), len(payload))
         else:
-            indices = range(meta_len, meta_len + len(payload))
+            indices = range(meta_len_in_pixels, meta_len_in_pixels + len(payload))
             
         for i, idx in enumerate(indices):
             fi, y, x = SteganoEngine._pixel_coordinates(idx, w, h)
             b, g, r = frames[fi][y, x]
-            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, payload[i], mode=lsb_mode)
+            new_r, new_g, new_b = BitManipulator.embed_lsb(r, g, b, payload[i], r_bits, g_bits, b_bits)
             frames[fi][y, x] = [new_b, new_g, new_r]
             
         return frames
@@ -173,40 +174,45 @@ class SteganoEngine:
         h, w, _ = frames[0].shape
         total_pixels = h * w * len(frames)
         
-        def get_pixel_byte(index, mode="332"):
+        def get_pixel_byte(index, rb, gb, bb):
             fi, y, x = SteganoEngine._pixel_coordinates(index, w, h)
             b, g, r = frames[fi][y, x]
-            return BitManipulator.extract_lsb(r, g, b, mode)
+            return BitManipulator.extract_lsb(r, g, b, rb, gb, bb)
             
         len_bytes = bytearray()
         for i in range(4):
-            len_bytes.append(get_pixel_byte(i, "332"))
-        meta_len = struct.unpack(">I", bytes(len_bytes))[0]
+            len_bytes.append(get_pixel_byte(i, 3, 3, 2))
+        meta_json_len = struct.unpack(">I", bytes(len_bytes))[0]
         
         meta_json_bytes = bytearray()
-        for i in range(4, 4 + meta_len):
-            meta_json_bytes.append(get_pixel_byte(i, "332"))
+        for i in range(4, 4 + meta_json_len):
+            meta_json_bytes.append(get_pixel_byte(i, 3, 3, 2))
             
         try:
             metadata = json.loads(meta_json_bytes.decode('utf-8'))
         except:
-            raise ValueError()
+            raise ValueError("Gagal mengekstraksi metadata. Kunci mungkin salah.")
+            
         if metadata.get("magic") != "STG26":
-            raise ValueError()
+            raise ValueError("Format steganografi tidak dikenali.")
             
         payload_size = metadata.get("size")
         is_random = metadata.get("random")
-        lsb_mode = metadata.get("lsb_mode", "332")
-        total_meta_used = 4 + meta_len
+        lsb_mode_str = metadata.get("lsb_mode", "332")
+        rb_ext = int(lsb_mode_str[0])
+        gb_ext = int(lsb_mode_str[1])
+        bb_ext = int(lsb_mode_str[2])
+        
+        total_meta_pixels = 4 + meta_json_len
         
         if is_random:
             random.seed(stego_key)
-            indices = random.sample(range(total_meta_used, total_pixels), payload_size)
+            indices = random.sample(range(total_meta_pixels, total_pixels), payload_size)
         else:
-            indices = range(total_meta_used, total_meta_used + payload_size)
+            indices = range(total_meta_pixels, total_meta_pixels + payload_size)
             
         secret_payload = bytearray()
         for idx in indices:
-            secret_payload.append(get_pixel_byte(idx, lsb_mode))
+            secret_payload.append(get_pixel_byte(idx, rb_ext, gb_ext, bb_ext))
             
         return metadata, bytes(secret_payload)
