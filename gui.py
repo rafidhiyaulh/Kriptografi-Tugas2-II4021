@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
+import hashlib
 
 from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 from src.crypto_logic import A51Cipher
@@ -32,9 +33,11 @@ class SteganoApp(ctk.CTk):
         self.tabview.pack(padx=24, pady=(16, 20), fill="both", expand=True)
         self.tabview.add("Embedding")
         self.tabview.add("Extraction")
+        self.tabview.add("Verifikasi MD5")
 
         self.setup_embedding_tab()
         self.setup_extraction_tab()
+        self.setup_md5_tab()
 
     # Embedding
 
@@ -196,6 +199,44 @@ class SteganoApp(ctk.CTk):
             fg_color="#1a4a8a", hover_color="#133870",
             corner_radius=10, command=self.run_extraction)
         self.btn_extract.grid(row=row, column=0, sticky="ew", padx=4, pady=(12, 4))
+
+    def setup_md5_tab(self):
+        tab = self.tabview.tab("Verifikasi MD5")
+        tab.columnconfigure(0, weight=1)
+
+        row = 0
+
+        sec_md5 = SectionFrame(tab, "UJI INTEGRITAS BERKAS (MD5 Hash)")
+        sec_md5.grid(row=row, column=0, sticky="ew", padx=4, pady=(4, 6))
+        sec_md5.columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(sec_md5, text="Berkas Asli", anchor="w").grid(
+            row=1, column=0, sticky="w", padx=14, pady=(0, 10))
+        self.entry_md5_1 = ctk.CTkEntry(sec_md5, placeholder_text="Pilih berkas rahasia sebelum embedding…")
+        self.entry_md5_1.grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 10))
+        ctk.CTkButton(sec_md5, text="Browse", width=80,
+                      command=lambda: self.browse_generic(self.entry_md5_1)).grid(
+            row=1, column=2, padx=(0, 14), pady=(0, 10))
+
+        ctk.CTkLabel(sec_md5, text="Berkas Ekstraksi", anchor="w").grid(
+            row=2, column=0, sticky="w", padx=14, pady=(0, 10))
+        self.entry_md5_2 = ctk.CTkEntry(sec_md5, placeholder_text="Pilih berkas rahasia hasil ekstraksi…")
+        self.entry_md5_2.grid(row=2, column=1, sticky="ew", padx=(0, 8), pady=(0, 10))
+        ctk.CTkButton(sec_md5, text="Browse", width=80,
+                      command=lambda: self.browse_generic(self.entry_md5_2)).grid(
+            row=2, column=2, padx=(0, 14), pady=(0, 10))
+
+        row += 1
+
+        self.btn_check_md5 = ctk.CTkButton(
+            tab, text="✔ Hitung & Bandingkan MD5", height=44,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#e07a16", hover_color="#ad5c0c",
+            corner_radius=10, command=self.run_md5_check)
+        self.btn_check_md5.grid(row=row, column=0, sticky="ew", padx=4, pady=(12, 4))
+        
+        self.label_md5_result = ctk.CTkLabel(tab, text="Silakan pilih 2 file untuk menguji kecocokan 100% bit.", font=ctk.CTkFont(size=13))
+        self.label_md5_result.grid(row=row+1, column=0, pady=20)
 
     # Helpers
 
@@ -380,3 +421,28 @@ class SteganoApp(ctk.CTk):
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def run_md5_check(self):
+        file1 = self.entry_md5_1.get()
+        file2 = self.entry_md5_2.get()
+        
+        if not os.path.exists(file1) or not os.path.exists(file2):
+            messagebox.showerror("Error", "Pastikan kedua file telah dipilih dan ada di komputer Anda.")
+            return
+            
+        try:
+            with open(file1, 'rb') as f1:
+                hash1 = hashlib.md5(f1.read()).hexdigest()
+            with open(file2, 'rb') as f2:
+                hash2 = hashlib.md5(f2.read()).hexdigest()
+                
+            if hash1 == hash2:
+                color = "#20a149" # Ijo sukses
+                msg = f"✅ INTEGRITAS TERJAGA SEMPURNA (100% MATCH)\n\nHash Berkas Asli:\n{hash1}\n\nHash Berkas Ekstraksi:\n{hash2}"
+            else:
+                color = "#d93b3b" # Merah gagal
+                msg = f"❌ BERKAS CORRUPT BEDA ISINYA\n\nHash Asli:\n{hash1}\n\nHash Ekstraksi:\n{hash2}"
+                
+            self.label_md5_result.configure(text=msg, text_color=color)
+        except Exception as e:
+            messagebox.showerror("MD5 Error", f"Gagal menghitung MD5: {str(e)}")
