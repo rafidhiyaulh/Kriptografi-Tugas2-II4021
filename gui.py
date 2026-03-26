@@ -39,15 +39,12 @@ class SteganoApp(ctk.CTk):
         self.setup_extraction_tab()
         self.setup_md5_tab()
 
-    # Embedding
-
     def setup_embedding_tab(self):
         tab = self.tabview.tab("Embedding")
         tab.columnconfigure(0, weight=1)
 
         row = 0
 
-        # Cover Video
         sec_video = SectionFrame(tab, "COVER VIDEO")
         sec_video.grid(row=row, column=0, sticky="ew", padx=4, pady=(4, 6))
         sec_video.columnconfigure(1, weight=1)
@@ -61,7 +58,6 @@ class SteganoApp(ctk.CTk):
 
         row += 1
 
-        # Payload
         sec_msg = SectionFrame(tab, "PAYLOAD")
         sec_msg.grid(row=row, column=0, sticky="ew", padx=4, pady=6)
         sec_msg.columnconfigure(1, weight=1)
@@ -90,7 +86,6 @@ class SteganoApp(ctk.CTk):
 
         row += 1
 
-        # Config
         sec_cfg = SectionFrame(tab, "KONFIGURASI ENKRIPSI & PENYISIPAN")
         sec_cfg.grid(row=row, column=0, sticky="ew", padx=4, pady=6)
         sec_cfg.columnconfigure(1, weight=1)
@@ -116,7 +111,6 @@ class SteganoApp(ctk.CTk):
 
         row += 1
 
-        # Alokasi Bit
         sec_lsb = SectionFrame(tab, "ALOKASI BIT LSB  (Total harus = 8)")
         sec_lsb.grid(row=row, column=0, sticky="ew", padx=4, pady=6)
 
@@ -151,8 +145,6 @@ class SteganoApp(ctk.CTk):
         self._payload_trace_var = ctk.StringVar()
         self._payload_trace_var.trace_add("write", lambda *_: self.update_capacity_info())
         self.entry_payload._entry.config(textvariable=self._payload_trace_var)
-
-    # Extraction
 
     def setup_extraction_tab(self):
         tab = self.tabview.tab("Extraction")
@@ -196,7 +188,7 @@ class SteganoApp(ctk.CTk):
         self.btn_extract = ctk.CTkButton(
             tab, text="▶  Mulai Ekstraksi", height=44,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#1a4a8a", hover_color="#133870",
+            fg_color="#1a7a3c", hover_color="#155e2e",
             corner_radius=10, command=self.run_extraction)
         self.btn_extract.grid(row=row, column=0, sticky="ew", padx=4, pady=(12, 4))
 
@@ -231,14 +223,12 @@ class SteganoApp(ctk.CTk):
         self.btn_check_md5 = ctk.CTkButton(
             tab, text="✔ Hitung & Bandingkan MD5", height=44,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#e07a16", hover_color="#ad5c0c",
+            fg_color="#1a7a3c", hover_color="#155e2e",
             corner_radius=10, command=self.run_md5_check)
         self.btn_check_md5.grid(row=row, column=0, sticky="ew", padx=4, pady=(12, 4))
         
         self.label_md5_result = ctk.CTkLabel(tab, text="Silakan pilih 2 file untuk menguji kecocokan 100% bit.", font=ctk.CTkFont(size=13))
         self.label_md5_result.grid(row=row+1, column=0, pady=20)
-
-    # Helpers
 
     def _toggle_encrypt_key(self):
         state = "normal" if self.check_encrypt.get() else "disabled"
@@ -437,10 +427,10 @@ class SteganoApp(ctk.CTk):
                 hash2 = hashlib.md5(f2.read()).hexdigest()
                 
             if hash1 == hash2:
-                color = "#20a149" # Ijo sukses
+                color = "#20a149"
                 msg = f"✅ INTEGRITAS TERJAGA SEMPURNA (100% MATCH)\n\nHash Berkas Asli:\n{hash1}\n\nHash Berkas Ekstraksi:\n{hash2}"
             else:
-                color = "#d93b3b" # Merah gagal
+                color = "#d93b3b"
                 msg = f"❌ BERKAS CORRUPT BEDA ISINYA\n\nHash Asli:\n{hash1}\n\nHash Ekstraksi:\n{hash2}"
                 
             self.label_md5_result.configure(text=msg, text_color=color)

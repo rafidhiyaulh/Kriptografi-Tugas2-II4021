@@ -3,7 +3,7 @@ import os
 import numpy as np
 import hashlib
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.crypto_logic import A51Cipher
 from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 

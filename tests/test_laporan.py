@@ -95,15 +95,12 @@ def test_kombinasi_dan_kapasitas():
     cipher_asli = A51Cipher("KUNCIAJA")
     encrypted_payload = cipher_asli.process(payload)
     
-    # Simulasikan embedding dengan Kunci asli
     stego_frames = SteganoEngine.embed_data(c_frames, "rahasia.txt", encrypted_payload, True, True, "STEGO_ASLI", 3, 3, 2)
     
-    # Penyerang 1: Mencoba mengekstrak tapi beda stego key
     meta_palsu, ext_encrypted_palsu = SteganoEngine.extract_data(stego_frames, "STEGO_PALSU")
     if ext_encrypted_palsu != encrypted_payload:
         print("V SUKSES PENGUJIAN: Ekstraksi tertolak/hancur karena Stego-Key penyerang salah.")
         
-    # Penyerang 2: Berhasil menebak stego key, tapi kunci deksripsi A5/1 nya keliru
     meta, ext_encrypted = SteganoEngine.extract_data(stego_frames, "STEGO_ASLI")
     cipher_palsu = A51Cipher("KUNCIBOH")
     ext_garbage = cipher_palsu.process(ext_encrypted)
