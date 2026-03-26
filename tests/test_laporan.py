@@ -4,7 +4,7 @@ import numpy as np
 import hashlib
 import glob
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.crypto_logic import A51Cipher
 from src.video_engine import SteganoEngine, VideoHandler, QualityMetrics
 
@@ -47,7 +47,7 @@ def test_kombinasi_dan_kapasitas():
                     payload = cipher.process(payload)
                     
                 stego_frames = SteganoEngine.embed_data(
-                    c_frames, "tes.txt", payload, cryp_mode, rng_mode, key_stego, l_mode
+                    c_frames, "tes.txt", payload, cryp_mode, rng_mode, key_stego, int(l_mode[0]), int(l_mode[1]), int(l_mode[2])
                 )
                 
                 mse = QualityMetrics.calculate_mse(frames[0], stego_frames[0])
@@ -80,13 +80,36 @@ def test_kombinasi_dan_kapasitas():
             raw_data = f.read()
             
         c_frames = [f.copy() for f in big_frames]
-        stego_frames = SteganoEngine.embed_data(c_frames, filepath, raw_data, False, False, lsb_mode="332")
+        stego_frames = SteganoEngine.embed_data(c_frames, filepath, raw_data, False, False, None, 3, 3, 2)
         meta, ext_data = SteganoEngine.extract_data(stego_frames)
         
         hash_in = hashlib.md5(raw_data).hexdigest()
         hash_out = hashlib.md5(ext_data).hexdigest()
         ext = os.path.splitext(filepath)[1]
         print(f"Uji Ekstensi '{ext}': MD5 Match = {hash_in == hash_out}")
+        
+    print("\n--- [4] TEST: KETAHANAN KUNCI (INVALID KEY ATTACK) ---")
+    c_frames = [f.copy() for f in big_frames]
+    
+    payload = b"PESAN SANGAT RAHASIA"
+    cipher_asli = A51Cipher("KUNCIAJA")
+    encrypted_payload = cipher_asli.process(payload)
+    
+    # Simulasikan embedding dengan Kunci asli
+    stego_frames = SteganoEngine.embed_data(c_frames, "rahasia.txt", encrypted_payload, True, True, "STEGO_ASLI", 3, 3, 2)
+    
+    # Penyerang 1: Mencoba mengekstrak tapi beda stego key
+    meta_palsu, ext_encrypted_palsu = SteganoEngine.extract_data(stego_frames, "STEGO_PALSU")
+    if ext_encrypted_palsu != encrypted_payload:
+        print("V SUKSES PENGUJIAN: Ekstraksi tertolak/hancur karena Stego-Key penyerang salah.")
+        
+    # Penyerang 2: Berhasil menebak stego key, tapi kunci deksripsi A5/1 nya keliru
+    meta, ext_encrypted = SteganoEngine.extract_data(stego_frames, "STEGO_ASLI")
+    cipher_palsu = A51Cipher("KUNCIBOH")
+    ext_garbage = cipher_palsu.process(ext_encrypted)
+    
+    if ext_garbage != payload:
+        print("V SUKSES PENGUJIAN: Dekripsi hancur (Corrupted File) karena sandi Kriptografi A5/1 salah.")
 
     if os.path.exists(dummy_video_path): os.remove(dummy_video_path)
 
