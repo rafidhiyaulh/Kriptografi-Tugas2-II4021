@@ -23,8 +23,8 @@ class SteganoApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("SteganoVideo II4021 — LSB & A5/1")
-        self.geometry("860x700")
+        self.title("SteganoVideo")
+        self.geometry("860x740")
         self.minsize(780, 640)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
