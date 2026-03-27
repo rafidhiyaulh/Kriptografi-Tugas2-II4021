@@ -90,12 +90,12 @@ class SteganoApp(ctk.CTk):
         sec_cfg.grid(row=row, column=0, sticky="ew", padx=4, pady=6)
         sec_cfg.columnconfigure(1, weight=1)
 
-        self.check_encrypt = ctk.CTkCheckBox(sec_cfg, text="Gunakan Enkripsi A5/1",
+        self.check_encrypt = ctk.CTkCheckBox(sec_cfg, text="Gunakan Enkripsi A5/1 (Wajib 8 Karakter)",
                                              command=self._toggle_encrypt_key)
         self.check_encrypt.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(0, 4))
 
         self.entry_key_a51 = ctk.CTkEntry(sec_cfg, placeholder_text="Kunci A5/1 (8 karakter)",
-                                          show="●", state="disabled")
+                                          state="disabled")
         self.entry_key_a51.grid(row=2, column=0, columnspan=3, sticky="ew", padx=14, pady=(0, 10))
 
         ctk.CTkFrame(sec_cfg, height=1, fg_color=("gray75", "gray30")).grid(
@@ -428,10 +428,10 @@ class SteganoApp(ctk.CTk):
                 
             if hash1 == hash2:
                 color = "#20a149"
-                msg = f"✅ INTEGRITAS TERJAGA SEMPURNA (100% MATCH)\n\nHash Berkas Asli:\n{hash1}\n\nHash Berkas Ekstraksi:\n{hash2}"
+                msg = f"INTEGRITAS TERJAGA SEMPURNA (100% MATCH)\n\nHash Berkas Asli:\n{hash1}\n\nHash Berkas Ekstraksi:\n{hash2}"
             else:
                 color = "#d93b3b"
-                msg = f"❌ BERKAS CORRUPT BEDA ISINYA\n\nHash Asli:\n{hash1}\n\nHash Ekstraksi:\n{hash2}"
+                msg = f"BERKAS CORRUPT BEDA ISINYA\n\nHash Asli:\n{hash1}\n\nHash Ekstraksi:\n{hash2}"
                 
             self.label_md5_result.configure(text=msg, text_color=color)
         except Exception as e:
