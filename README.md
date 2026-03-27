@@ -1,50 +1,44 @@
-# SteganoVideo
+# SteganoVideo LSB & A5/1
 
-SteganoVideo is a desktop application for embedding and extracting secret messages in videos using steganography techniques and A5/1 stream cipher encryption.
+SteganoVideo adalah aplikasi desktop yang dirancang untuk penyisipan dan ekstraksi pesan rahasia (file/teks) ke dalam video berformat `.avi` dan `.mp4`. Aplikasi ini mengimplementasikan teknik LSB (Least Significant Bit) Dinamis yang diperkuat dengan lapisan keamanan Kriptografi Stream Cipher A5/1 dan Pseudo-Random Number Generator (PRNG).
 
-## Tech Stack / Technologies Used
+> Laporan Proyek: Rincian lengkap mengenai arsitektur, perhitungan matematis (PSNR/MSE), analisis histogram, serta hasil pengujian dapat diakses pada Laporan Tugas (berada dalam folder `/doc` atau lampiran pengumpulan tugas).
 
-- Python 3
-- OpenCV (opencv-python)
-- NumPy
-- Matplotlib
-- ImageIO & imageio-ffmpeg
-- CustomTkinter (GUI)
-
-## Dependencies
-
-All dependencies can be installed via the `requirements.txt` file:
-
-- opencv-python
-- numpy
-- matplotlib
-- imageio
-- imageio-ffmpeg
-- customtkinter
-
-## How to Run the Program
-
-You can run this application in two ways:
-
-### 1. Using the .exe File
-
-Download the executable file from the following link:
-[Download SteganoVideo .exe](https://drive.google.com/file/d/1sq2zXrylPKb536sFZ2N9u3PBahXPLHwL/view?usp=sharing)
-
-After downloading, run the `.exe` file. No need to install Python or additional libraries.
-
-### 2. Using Python
-
-1. Make sure Python is installed on your computer.
-2. Install dependencies with the following command:
-	```bash
-	pip install -r requirements.txt
-	```
-3. Run the application using one of the following commands:
-	```bash
-	python -m main
-	# or
-	python main.py
-	```
+## Tim Pengembang
+Tugas 2 II4021 Kriptografi (Semester II Tahun 2025/2026 - Institut Teknologi Bandung)
+- Alfandito Rais Akbar (18222037)
+- Muhammad Rafi Dhiyaulhaq (18222069)
+- Jason Samuel (18223091)
 
 ---
+
+## Tech Stack & Dependensi
+Aplikasi ini dibangun menggunakan ekosistem Python 3. Seluruh pustaka pendukung dapat dipasang melalui `requirements.txt`:
+- `opencv-python` (Manipulasi Matriks Video)
+- `numpy` (Komputasi Array Dinamis)
+- `matplotlib` (Visualisasi Kurva Histogram)
+- `imageio` & `imageio-ffmpeg` (Dukungan Video Lossless MP4)
+- `customtkinter` (Antarmuka Graphical User Interface)
+
+---
+
+## Tata Cara Menjalankan Program
+
+Aplikasi dapat dijalankan melalui dua metode:
+
+### 1. Eksekusi Mandiri (.exe) - Windows Only
+Bagi pengguna sistem operasi Windows yang tidak memiliki lingkungan Python, silakan klik tautan di bawah untuk mengunduh versi executable. Versi ini tidak memerlukan instalasi pustaka tambahan apa pun.
+
+[Download SteganoVideo .exe](https://drive.google.com/file/d/1sq2zXrylPKb536sFZ2N9u3PBahXPLHwL/view?usp=sharing)
+
+### 2. Eksekusi via Terminal (Semua OS)
+Jika Anda ingin menjalankan source code secara langsung melalui Terminal (MacOS/Linux/Windows):
+1. Pastikan Python 3 telah terinstal di sistem Anda.
+2. Pasang modul yang diperlukan dengan perintah berikut:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Jalankan program utama untuk membuka antarmuka GUI:
+   ```bash
+   python main.py
+   ```
